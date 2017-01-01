@@ -1,0 +1,6 @@
+[submodule "robot-motion-planning"]
+	path = robot-motion-planning
+	url = https://gitlab.com/milesj6/robot-motion-planning.git
+[submodule "src/robot-motion-planning"]
+	path = src/robot-motion-planning
+	url = https://gitlab.com/milesj6/robot-motion-planning.git

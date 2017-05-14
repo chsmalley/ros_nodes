@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>ros_nodes</name>
+  <version>1.0.0</version>
+  <description>This package provides ros interfaces</description>
+
+  <maintainer email="chris.smalley.32@gmail.com">Chris Smalley</maintainer>
+
+  <license>BSD</license>
+
+  <url type="repository"></url>
+  <url type="bugtracker"></url>
+
+  <author email="chris.smalley.32@gmail.com">Chris Smalley</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>stage_ros</run_depend>
+
+</package>

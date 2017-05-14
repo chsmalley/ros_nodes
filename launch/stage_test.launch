@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <param name="/use_sim_time" value="true"/>
+  <node pkg="stage_ros" type="stageros" name="stageros" args="$(find ros_nodes)/stage/willow-erratic.world" respawn="false">
+    <param name="base_watchdog_timeout" value="0.2"/>
+  </node>
+</launch>
+

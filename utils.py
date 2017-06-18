@@ -175,35 +175,110 @@ def placeModel(objectName, pose, name, color="black"):  # {{{1
     return model
 
 
-def dictToWorld(dictionary):  # {{{1
+def dictToWorld(datadict):  # {{{1
     """
     inputs: dictionary with description file
     output: string in stage world format
+            and a dictionary of the map objects
     """
-    # # dictionary
-    # worldstr = ""
-    # verts = [q for q in dictionary["vertices"]]
-    # x_min = min([p[0] for p in verts])
-    # x_max = max([p[0] for p in verts])
-    # y_min = min([p[1] for p in verts])
-    # y_max = max([p[1] for p in verts])
-    # # CREATE OBJECTS
-    # worldstr += createModel("block", 1, 1, 1)
-    # # CREATE SENSORS
+    # LOAD CONFIG FILE
+    # print("datadict: ", datadict)
+    worldmap = {}
+    # CREATE WORLD FILE FROM CONFIG
+    worldstr = ""
+    verts = [q for q in datadict["world"]["vertices"]]
+    worldmap['vertices'] = verts
+    x_min = min([p[0] for p in verts])
+    x_max = max([p[0] for p in verts])
+    y_min = min([p[1] for p in verts])
+    y_max = max([p[1] for p in verts])
+    # CREATE SENSORS
+    worldstr += createSensor("scanner", "ranger")
+    # CREATE ROBOT MODELS
+    sensors = [{'name': 'scanner',
+                'x': 0.05,
+                'y': 0.0,
+                'z': 0.0,
+                'heading': 0.0}]
+    for agent in datadict["agents"]:
+        size = agent["modelparam"][0]
+        worldstr += createModel(agent["class"],
+                                size,
+                                agent["q_start"],
+                                agent["model"],
+                                sensors)
+        # PLACE MODELS
+        x = np.random.uniform(x_min, x_max)
+        y = np.random.uniform(y_min, y_max)
+        worldstr += placeModel(agent["class"],
+                               agent["q_start"],
+                               agent["name"],
+                               color="blue")
+    # CREATE WORLD LAYOUT
+    worldstr += createWorldLayout()
+    # worldstr += createWorldLayout(layoutName=descr["world"]["class"],
+    #                               color="gray30",
+    #                               boundary="1",
+    #                               gui_nose="0",
+    #                               gui_grid="0",
+    #                               gui_outline="0",
+    #                               gripper_return="0",
+    #                               fiducial_return="0",
+    #                               laser_return="1")
+    # PLACE LAYOUT
+    n = x_max - x_min
+    m = y_max - y_min
+    imageName = datadict["world"]["class"] + '.png'
+    createEmptyWorldImage(n, m, name=imageName)
+    worldOrientationQuat = (0, 0, 0, 0)
+    worldSize = (n, m, 2)  # x = n, y = m, z = 2
+    worldstr += placeWorldLayout(datadict["world"]["class"],
+                                 imageName,
+                                 worldSize,
+                                 worldOrientationQuat)
+    # CREATE OBJECTS
+    obsDescr = datadict["world"]["obstacles"]
+    worldmap['obstacles'] = {}
+    # PLACE OBJECTS
+    for objectName, n in zip(obsDescr["Random"]["class"],
+                             obsDescr["Random"]["n"]):
+        worldmap['obstacles']['objectName'] = []
+        objSize = obsDescr["Random"]["paramDistribution"][0]
+        worldstr += createObject(objectName, objSize)
+        for i in range(n):
+            x = np.random.uniform(x_min, x_max)
+            y = np.random.uniform(y_min, y_max)
+            heading = 0
+            pose = (x, y, heading)
+            worldmap['obstacles']['objectName'].append(pose)
+            worldstr += placeModel(objectName, pose, i, color="black")
 
-    # # CREATE ROBOT MODELS
+    # resolution 0.02
+    # interval_sim 100  # simulation timestep in milliseconds
+    return worldstr, worldmap
 
-    # # CREATE WORLD LAYOUT
 
-    # # PLACE LAYOUT
-
-    # # PLACE OBJECTS
-
-    # # PLACE MODELS
-
-    # # resolution 0.02
-    # # interval_sim 100  # simulation timestep in milliseconds
-    pass
+def dictToLaunch(datadict):  # {{{1
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <launch>
+      <param name="/use_sim_time" value="true"/>
+      <node pkg="stage_ros" type="stageros" name="stageros" args="$(find ros_nodes)/stage/test.world" respawn="false">
+        <param name="base_watchdog_timeout" value="0.2"/>
+      </node>
+    </launch>
+    """
+    packagename = datadict['world']['package']
+    worldfilename = datadict['world']['worldfilename']
+    launchstr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    launchstr += "<launch>\n"
+    launchstr += "  <param name=\"/use_sim_time\" value=\"true\"/>\n"
+    launchstr += "  <node pkg=\"stage_ros\" type=\"stageros\" name=\"stageros\""
+    launchstr += " args=\"$(find {})/{}\" respawn=\"false\">".format(packagename, worldfilename)
+    launchstr += "  <param name=\"base_watchdog_timeout\" value=\"0.2\"/>\n"
+    launchstr += "  </node>\n"
+    launchstr += "</launch>\n"
+    return launchstr
 
 
 def testJsonToWorld(configfilename):  # {{{1

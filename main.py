@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import rospy
+import estimators
 
 
 if __name__ == '__main__':
@@ -23,13 +24,13 @@ if __name__ == '__main__':
     f.close()
     os.system("roslaunch "
               + datadict["descr"]["world"]["package"] + " "
-              + datadict["descr"]["world"]["launchfilename"] + " &")
+              + datadict["descr"]["world"]["launchfilename"])
 
     # CREATE AGENTS
     for agent in datadict["descr"]["agents"]:
         print(agent)
         # CREATE ESTMATOR OBJECTS
-        # for estimator in agent:
+        # for estimator in agent['estimators']:
         #     estimatorname = estimator["name"]
         #     # Initialize the node and name it.
         #     rospy.init_node(estimatorname)

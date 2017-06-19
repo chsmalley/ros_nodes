@@ -119,11 +119,17 @@ def createObject(objectName, objSize):  # {{{1
     # (
     #   size [0.5 0.5 0.5]
     #   gui_nose 0
+    #   gripper_return 0
+    #   fiducial_return 0
+    #   laser_return 1
     # )
     model = '\ndefine {} model\n'.format(objectName)
     model += '(\n'
-    model += '\tsize [{} {} {}]\n'.format(objSize, objSize, objSize)
+    model += '\tsize [{} {} {}]\n'.format(objSize, objSize, 2)
     model += '\tgui_nose 0\n'
+    model += '\tgripper_return 0\n'
+    model += '\tfiducial_return 0\n'
+    model += '\tlaser_return 1\n'
     model += ')\n'
     return model
 

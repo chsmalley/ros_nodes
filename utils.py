@@ -2,15 +2,79 @@ import numpy as np
 from scipy.misc import imsave
 import json
 # import sys
+import Image
+from shapely.geometry import LineString, Point, Polygon
+from shapely.affinity import rotate
+
+
+# MapToPolarScan  {{{1
+def polygonsToPolarScan(polygons,  # List(List(float))
+                        pose,  # List(float)
+                        angle_min,  # float
+                        angle_max,  # float
+                        angle_increment,  # float
+                        range_max):  # float
+    polarScan = []
+    for i in range(angle_min, angle_max, angle_increment):
+        # CREATE A LINE from the laser scanner to its max range
+        x = range_max * np.cos(i)
+        y = range_max * np.sin(i)
+        end_point = Point(x, y)
+        start_point = Point(pose['x'], pose['y'])
+        line = LineString([start_point, end_point])
+        # CHECK IF THAT LINE INTERSECTS WITH ANY OBJECTS
+        intersections = []
+        # OBJECTS IS A LIST OF SHAPELY POLYGONS
+        for obj in polygons:
+            tmp = line.intersects(obj)
+            intersections.append(tmp)
+        # SAVE THE DISTANCE TO THE CLOSEST INTERSECTING POINT
+        if intersections:
+            distances = [start_point.distance(p) for p in intersections]
+            polarScan.append(min(distances))
+        else:
+            polarScan.append(range_max)
+    return polarScan
+
+
+def createEmptyWorldImage2(n, m, name="world.png"):  # {{{1
+    print("n, m: ", n, m)
+    # image = np.zeros([n, m, 3], dtype=np.uint8)
+    m = m * 10
+    n = n * 10
+    size = (n, m)
+    image = Image.new("RGB", size)
+    pixels = image.load()
+    for i in range(1, n - 1):
+        for j in range(1, m - 1):
+            pixels[i, j] = (255, 255, 255)
+    image.save(name)
+    # image = np.zeros([m, n, 3], dtype=np.uint8)
+    # image[:, :, :] = 255
+    # image[0, 0:n - 1, :] = 0
+    # image[0:m - 1, 1, 0] = 0
+    # image[0:m - 1, n - 1, 0] = 0
+    # image[m - 1, 0:n - 1, 0] = 0
+    # imsave(name, image)
 
 
 def createEmptyWorldImage(n, m, name="world.png"):  # {{{1
-    image = np.zeros([n, m, 3], dtype=np.uint8)
-    image[:] = 255
-    image[:, 0, :] = 0
-    image[0, :, :] = 0
-    image[:, n - 1, :] = 0
-    image[m - 1, :, :] = 0
+    print("n, m: ", n, m)
+    # m = m * 10
+    # n = n * 10
+    # image = np.zeros([n, m, 3], dtype=np.uint8)
+    image = np.zeros([m, n, 3], dtype=np.uint8)
+    image[:, :, :] = 255
+    image[0, 0:n - 1, :] = 0
+    image[0:m - 1, 0, :] = 0
+    image[0:m - 1, n - 1, :] = 0
+    image[m - 1, 0:n - 1, :] = 0
+    imsave(name, image)
+
+
+def createEmptyWorldImageNoBoarder(n, m, name="world.png"):  # {{{1
+    image = np.zeros([m, n, 3], dtype=np.uint8)
+    image[:, :, :] = 255
     imsave(name, image)
 
 
@@ -235,7 +299,8 @@ def dictToWorld(datadict):  # {{{1
     n = x_max - x_min
     m = y_max - y_min
     imageName = datadict["world"]["class"] + '.png'
-    createEmptyWorldImage(n, m, name=imageName)
+    createEmptyWorldImageNoBoarder(n, m, name=imageName)
+    # createEmptyWorld(n, m, name=imageName)
     worldOrientationQuat = (0, 0, 0, 0)
     worldSize = (n, m, 2)  # x = n, y = m, z = 2
     worldstr += placeWorldLayout(datadict["world"]["class"],
@@ -248,15 +313,22 @@ def dictToWorld(datadict):  # {{{1
     # PLACE OBJECTS
     for objectName, n in zip(obsDescr["Random"]["class"],
                              obsDescr["Random"]["n"]):
-        worldmap['obstacles']['objectName'] = []
-        objSize = obsDescr["Random"]["paramDistribution"][0]
+        worldmap['obstacles'][objectName] = []
+        objSize = obsDescr["Random"]["size"]
         worldstr += createObject(objectName, objSize)
         for i in range(n):
             x = np.random.uniform(x_min, x_max)
             y = np.random.uniform(y_min, y_max)
             heading = 0
+            halfsize = size / 2
+            polygon = Polygon([(x + halfsize, y + halfsize),
+                               (x - halfsize, y + halfsize),
+                               (x - halfsize, y - halfsize),
+                               (x + halfsize, y - halfsize)])
+            polygon = rotate(polygon, heading)
             pose = (x, y, heading)
-            worldmap['obstacles']['objectName'].append(pose)
+            # obj = Polygon()
+            worldmap['obstacles'][objectName].append(polygon)
             worldstr += placeModel(objectName, pose, i, color="black")
 
     # resolution 0.02

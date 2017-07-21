@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ros_nodes)
 
-find_package(catkin REQUIRED COMPONENTS geometry_msgs nav_msgs roscpp rostest sensor_msgs std_msgs tf)
+find_package(catkin REQUIRED COMPONENTS geometry_msgs nav_msgs roscpp rostest sensor_msgs std_msgs tf message_generation)
 
 #find_package(Boost REQUIRED COMPONENTS system thread)
 
@@ -17,12 +17,23 @@ find_package(catkin REQUIRED COMPONENTS geometry_msgs nav_msgs roscpp rostest se
 #  ${Stage_INCLUDE_DIRS}
 #)
 
-#catkin_package(
+add_message_files(
+    FILES
+    Point2D.msg
+    line.msg
+)
+
+generate_messages(
+    DEPENDENCIES
+    std_msgs
+)
+
+catkin_package(
 #  INCLUDE_DIRS ${Stage_INCLUDE_DIRS}
 #  LIBRARIES SimpleWorldcam ${Stage_LIBRARIES}
-#  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf
+  CATKIN_DEPENDS message_runtime geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf
 #  DEPENDS Boost
-#)
+)
 
 # Declare a cpp executable
 #add_executable(SimpleWorld src/SimpleWorld.cpp)

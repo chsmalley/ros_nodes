@@ -10,6 +10,7 @@ import json
 from shapely.geometry import LineString, Point
 from ros_nodes.msg import line, Point2D
 from sensor_msgs.msg import LaserScan
+from threading import Thread
 # from geometry_msgs.msg import Twist
 # import tf
 # import model
@@ -85,33 +86,31 @@ def Ransac(laserscan,
     return bestLine
 
 
-class RosDetectionNode(object):  # {{{1
+class RosDetectionNode(Thread):  # {{{1
 
     """
     Create a ROS node that implements a object detection algorithms
     inputs: All inputs should be from from sensors? (camera, lidar..)
     outputs: Outputs should be obstacles (type TBD)
     """
-    Topic = namedtuple("Topic",
-                       ["name",
-                        "type",
-                        "callback"])
 
-    def __init__(self, subscribe_topics, publish_topic):  # {{{2
+    def __init__(self, descr):  # {{{2
+        Thread.__init__(self)
+        self.name = descr["name"]
         # SET UP RATE FOR LOOP
         self.rate = rospy.Rate(10)  # TODO add to config
         # SET UP PUBLISHING
-        self.pub = rospy.Publisher(publish_topic['name'],
+        self.pub = rospy.Publisher(descr["publishtopic"]['name'],
                                    # publish_topic['topic'])
                                    line)
         # SET UP SUBSCRIBING
-        for topic in subscribe_topics:
+        for topic in descr["subscribetopics"]:
             rospy.Subscriber(topic['name'],
                              LaserScan,
                              self.laserScanCallback)
         self.laserscan = []
         # SET UP ALGORITHM FOR NODE
-        self.run()
+        # self.run()
 
     def run(self):
         while not rospy.is_shutdown():
@@ -158,21 +157,20 @@ class RosDetectionNode(object):  # {{{1
         pub.publish(publine)
         # TODO May need to repackage data
 
+
 # Main function.
 if __name__ == '__main__':  # {{{1
     # LOAD CONFIG FILE
     configfilename = sys.argv[1]
     with open(configfilename) as f:
-        datadict = json.load(f)
-    for estimator in datadict['estimators']:
-        print("estimator: ", estimator)
-        publish_topic = estimator["publishtopic"]
-        print("publishtopic: ", publish_topic)
-        subscribe_topics = estimator["subscribetopics"]
-        print("subscribetopics: ", subscribe_topics)
-        # Initialize the node and name it.
-        rospy.init_node(estimator['name'])
-        model = line
+        descr = json.load(f)
+    publish_topic = descr["publishtopic"]
+    print("publishtopic: ", publish_topic)
+    subscribe_topics = descr["subscribetopics"]
+    print("subscribetopics: ", subscribe_topics)
+    # Initialize the node and name it.
+    rospy.init_node(descr['name'])
+    model = line
     try:
         ne = RosDetectionNode(subscribe_topics, publish_topic, model)
     except rospy.ROSInterruptException:

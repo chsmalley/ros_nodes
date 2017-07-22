@@ -15,7 +15,7 @@ class TestDetectors(TestCase):  # {{{1
     def setUp(self):  # {{{2
         # LOAD DATA FILE
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafilename = os.path.join(dir_path, 'data/ranges2.json')
+        datafilename = os.path.join(dir_path, 'data/ranges.json')
         with open(datafilename) as f:
             ranges = json.load(f)["ranges"]
 

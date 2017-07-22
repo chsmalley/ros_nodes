@@ -7,7 +7,8 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.affinity import rotate
 
 
-# MapToPolarScan  {{{1
+# MAP UTILS  {{{1
+# MapToPolarScan  {{{2
 def polygonsToPolarScan(polygons,  # List(List(float))
                         pose,  # List(float)
                         angle_min,  # float
@@ -37,7 +38,8 @@ def polygonsToPolarScan(polygons,  # List(List(float))
     return polarScan
 
 
-def createEmptyWorldImage2(n, m, name="world.png"):  # {{{1
+# STAGE UTILS  {{{1
+def createEmptyWorldImage2(n, m, name="world.png"):  # {{{2
     print("n, m: ", n, m)
     # image = np.zeros([n, m, 3], dtype=np.uint8)
     m = m * 10
@@ -58,7 +60,7 @@ def createEmptyWorldImage2(n, m, name="world.png"):  # {{{1
     # imsave(name, image)
 
 
-def createEmptyWorldImage(n, m, name="world.png"):  # {{{1
+def createEmptyWorldImage(n, m, name="world.png"):  # {{{2
     print("n, m: ", n, m)
     # m = m * 10
     # n = n * 10
@@ -72,13 +74,13 @@ def createEmptyWorldImage(n, m, name="world.png"):  # {{{1
     imsave(name, image)
 
 
-def createEmptyWorldImageNoBoarder(n, m, name="world.png"):  # {{{1
+def createEmptyWorldImageNoBoarder(n, m, name="world.png"):  # {{{2
     image = np.zeros([m, n, 3], dtype=np.uint8)
     image[:, :, :] = 255
     imsave(name, image)
 
 
-# def createWorldLayout  {{{1
+# def createWorldLayout  {{{2
 def createWorldLayout(layoutName="floorplan",
                       color="gray30",
                       boundary="1",
@@ -119,7 +121,7 @@ def createWorldLayout(layoutName="floorplan",
     return layout
 
 
-def placeWorldLayout(layoutName, bitmap, size, worldOrientationQuat):  # {{{1
+def placeWorldLayout(layoutName, bitmap, size, worldOrientationQuat):  # {{{2
     """
     floorplan
     (
@@ -143,7 +145,7 @@ def placeWorldLayout(layoutName, bitmap, size, worldOrientationQuat):  # {{{1
     return layout
 
 
-# def createSensor {{{1
+# def createSensor {{{2
 def createSensor(sensorName,
                  sensorType,
                  rangeMin=0,
@@ -178,7 +180,7 @@ def createSensor(sensorName,
     return sensor
 
 
-def createObject(objectName, objSize):  # {{{1
+def createObject(objectName, objSize):  # {{{2
     # define block model
     # (
     #   size [0.5 0.5 0.5]
@@ -198,7 +200,7 @@ def createObject(objectName, objSize):  # {{{1
     return model
 
 
-def createModel(modelName, size, origin, drive, sensors):  # {{{1
+def createModel(modelName, size, origin, drive, sensors):  # {{{2
     """
     define bot position
     (
@@ -224,7 +226,7 @@ def createModel(modelName, size, origin, drive, sensors):  # {{{1
     return model
 
 
-def placeSensor(sensor):  # {{{1
+def placeSensor(sensor):  # {{{2
     # topurg(pose [ 0.050 0.000 0 0.000 ])
     sensor = '\t{} ( pose [ {} {} {} {} ])\n'.format(sensor['name'],
                                                      sensor['x'],
@@ -234,7 +236,7 @@ def placeSensor(sensor):  # {{{1
     return sensor
 
 
-def placeModel(objectName, pose, name, color="black"):  # {{{1
+def placeModel(objectName, pose, name, color="black"):  # {{{2
     # modelName(pose [x, y, heading]
     # block(pose [ 0.0 0.0 0.000 ] name "obj1" color "black")
     model = '\n{} ( pose [ {} {} 0 {} ] '.format(objectName,
@@ -245,7 +247,7 @@ def placeModel(objectName, pose, name, color="black"):  # {{{1
     return model
 
 
-def dictToWorld(datadict):  # {{{1
+def dictToWorld(datadict):  # {{{2
     """
     inputs: dictionary with description file
     output: string in stage world format
@@ -333,10 +335,13 @@ def dictToWorld(datadict):  # {{{1
 
     # resolution 0.02
     # interval_sim 100  # simulation timestep in milliseconds
-    return worldstr, worldmap
+    f = open(datadict["world"]["worldfilename"], 'w')
+    f.write(worldstr)
+    f.close()
+    return worldmap
 
 
-def dictToLaunch(datadict):  # {{{1
+def dictToLaunch(datadict):  # {{{2
     """
     <?xml version="1.0" encoding="UTF-8"?>
     <launch>
@@ -350,16 +355,19 @@ def dictToLaunch(datadict):  # {{{1
     worldfilename = datadict['world']['worldfilename']
     launchstr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     launchstr += "<launch>\n"
-    launchstr += "  <param name=\"/use_sim_time\" value=\"true\"/>\n"
+    launchstr += "  <param name=\"/use_sim_time\" value=\"false\"/>\n"
     launchstr += "  <node pkg=\"stage_ros\" type=\"stageros\" name=\"stageros\""
     launchstr += " args=\"$(find {})/{}\" respawn=\"false\">".format(packagename, worldfilename)
     launchstr += "  <param name=\"base_watchdog_timeout\" value=\"0.2\"/>\n"
     launchstr += "  </node>\n"
     launchstr += "</launch>\n"
-    return launchstr
+    f = open(datadict["world"]["launchfilename"], 'w')
+    f.write(launchstr)
+    f.close()
+    return
 
 
-def testJsonToWorld(configfilename):  # {{{1
+def testJsonToWorld(configfilename):  # {{{2
     # LOAD CONFIG FILE
     with open(configfilename) as f:
         descr = json.load(f)['descr']
@@ -432,7 +440,7 @@ def testJsonToWorld(configfilename):  # {{{1
     return worldstr
 
 
-def testDictToWorld(configfilename):  # {{{1
+def testDictToWorld(configfilename):  # {{{2
     # LOAD CONFIG FILE
     try:
         import ConfigParser

@@ -10,11 +10,6 @@
             "launchfilename": "boxes.launch",
             "worldfilename": "boxes.world",
             "package": "ros_nodes",
-            "goal": {
-                "class": "box",
-                 "q": [5.0,-5.0,0.0],
-                 "p": [1.0]
-            },
             "obstacles": {
                 "Random": {
                     "class": ["box"],
@@ -36,7 +31,7 @@
                     "k_beta": -0.5
                     },
                 "q_start": [0.0, 0.0, 0.0],
-                "estimators": [
+                "detectors": [
                     {
                         "name": "Ransac",
                         "function": "Ransac",
@@ -51,7 +46,9 @@
                             "name": "detectedline",
                             "topic": "line"
                         }
-                    },
+                    }
+                ],
+                "estimators": [
                     {
                         "name": "particlefilter",
                         "function": "particlefilter",
@@ -69,12 +66,6 @@
                     }
                 ]
             }
-        ],
-        "worldrunner": {
-            "class": "RosWorldRunner",
-            "package": "ros_nodes",
-            "timeTopic": "clock",
-            "period": 0.1
-        }
+        ]
     }
 }

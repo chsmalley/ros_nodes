@@ -1,27 +1,23 @@
 import utils
 import sys
-import os
-import signal
 import json
 import time
 import subprocess
 import rospy
 from detection_node import RosDetectionNode
 # from estimation_node import RosEstimationNode
-from multiprocessing import Process
 # import estimators
-# import os
-# import signal
 
 
 def launch_stage(descr):  # {{{1
-    utils.dictToLaunch(datadict["descr"])  # Creates the launch file
-    launchstr = "roslaunch " + datadict["descr"]["world"]["package"]
-    launchstr += " " + datadict["descr"]["world"]["launchfilename"]
+    utils.dictToLaunch(descr)  # Creates the launch file
+    launchstr = "roslaunch " + descr["world"]["package"]
+    launchstr += " " + descr["world"]["launchfilename"]
     launcher = subprocess.Popen(launchstr.split())
     return launcher
 
-if __name__ == '__main__':
+
+if __name__ == '__main__':  # {{{1
     # LOAD CONFIG FILE
     configfilename = sys.argv[1]
     with open(configfilename) as f:
@@ -30,8 +26,7 @@ if __name__ == '__main__':
     worldmap = utils.dictToWorld(datadict["descr"])
 
     # LAUNCH STAGE SIMULATOR
-    launcher = Process(target=launch_stage, args=(datadict["descr"],))
-    launcher.start()
+    launcher = launch_stage(datadict["descr"])
     time.sleep(2)  # Let stage start up
 
     # CREATE AGENTS
@@ -54,14 +49,8 @@ if __name__ == '__main__':
         #     ros_nodes.append(RosEstimationNode(estimator))
         # START ROS OBJECTS
         for node in ros_nodes:
+            node.daemon = True
             node.start()
-    try:
-        while True:
-            time.sleep(1)
-            print("running")
-    except KeyboardInterrupt:
-        # CLEAN SOME THINGS UP
-        print("KeyboardInterrupt")
-        # os.kill(os.getpgid(launcher.pid), signal.SIGTERM)
-        launcher.terminate()
-    launcher.terminate()
+    while not rospy.is_shutdown():
+        time.sleep(1)
+        print("running main")

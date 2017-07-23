@@ -11,6 +11,7 @@ from shapely.geometry import LineString, Point
 from ros_nodes.msg import line, Point2D
 from sensor_msgs.msg import LaserScan
 from threading import Thread
+from rospy.exceptions import ROSInterruptException
 # from geometry_msgs.msg import Twist
 # import tf
 # import model
@@ -96,6 +97,7 @@ class RosDetectionNode(Thread):  # {{{1
 
     def __init__(self, descr):  # {{{2
         Thread.__init__(self)
+        self.state = "init"
         self.name = descr["name"]
         # SET UP RATE FOR LOOP
         self.rate = rospy.Rate(10)  # TODO add to config
@@ -112,8 +114,9 @@ class RosDetectionNode(Thread):  # {{{1
         # SET UP ALGORITHM FOR NODE
         # self.run()
 
-    def run(self):
-        while not rospy.is_shutdown():
+    def run(self):  # {{{2
+        self.state = "running"
+        while not rospy.is_shutdown() or self.state == "stop":
             # data = self.policy.step()
             clusters = clusterLaserscan(self.laserscan)
             lines = []
@@ -121,8 +124,14 @@ class RosDetectionNode(Thread):  # {{{1
                 tmpline = Ransac(cluster)
                 lines.append(tmpline)
                 print("lines: ", lines)
-            self.publishObjects(self.pub, lines)
+            # self.publishObjects(self.pub, lines)
             self.rate.sleep()
+        self.stop()
+        return
+
+    def stop(self):  # {{{2
+        self.state = "stop"
+        print("Stopping: ", self.name)
 
     # Callback functions {{{2
     def cameraCallback(self, data):  # {{{3

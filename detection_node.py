@@ -5,16 +5,17 @@ import sys
 import numpy as np
 import random
 import rospy
+# import logging
 # import math
 import json
 from shapely.geometry import LineString, Point
-from ros_nodes.msg import line, Point2D
+# from ros_nodes.msg import line, Point2D
 from sensor_msgs.msg import LaserScan
 from threading import Thread
-from rospy.exceptions import ROSInterruptException
+from geometry_msgs.msg import Polygon, Point32
+# from rospy.exceptions import ROSInterruptException
 # from geometry_msgs.msg import Twist
 # import tf
-# import model
 # from robot-motion-planning import utils
 
 
@@ -23,7 +24,7 @@ def mergeLines(lines, threshold):  # {{{1
     pass
 
 
-def clusterLaserscan(laserscan, threshold=1):  # {{{1
+def clusterLaserscan(laserscan, threshold=1, min_points=10):  # {{{1
     # if there is difference in distance greater than thresh
     # break into two clusters
     if not laserscan:
@@ -37,6 +38,7 @@ def clusterLaserscan(laserscan, threshold=1):  # {{{1
             clusters.append(laserscan[i_prev:i])
             i_prev = i
         p_prev = p
+    clusters = [c for c in clusters if len(c) > min_points]
     return clusters
 
 
@@ -104,7 +106,7 @@ class RosDetectionNode(Thread):  # {{{1
         # SET UP PUBLISHING
         self.pub = rospy.Publisher(descr["publishtopic"]['name'],
                                    # publish_topic['topic'])
-                                   line)
+                                   Polygon)
         # SET UP SUBSCRIBING
         for topic in descr["subscribetopics"]:
             rospy.Subscriber(topic['name'],
@@ -123,8 +125,7 @@ class RosDetectionNode(Thread):  # {{{1
             for cluster in clusters:
                 tmpline = Ransac(cluster)
                 lines.append(tmpline)
-                print("lines: ", lines)
-            # self.publishObjects(self.pub, lines)
+            self.publishObjects(self.pub, lines)
             self.rate.sleep()
         self.stop()
         return
@@ -154,17 +155,14 @@ class RosDetectionNode(Thread):  # {{{1
 
     # Publish functions {{{2
     def publishObjects(self, pub, data):  # {{{3
-        print("data", data)
         publine = []
         for obj in data:
             points = list(obj.coords)
             for point in points:
-                tmp = Point2D
-                tmp.x = point[0]
-                tmp.y = point[1]
+                # tmp = Point2D(x=point[0], y=point[1])
+                tmp = Point32(x=point[0], y=point[1])
                 publine.append(tmp)
         pub.publish(publine)
-        # TODO May need to repackage data
 
 
 # Main function.

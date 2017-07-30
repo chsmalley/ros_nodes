@@ -6,11 +6,13 @@ import numpy as np
 # import random
 import rospy
 from sensor_msgs.msg import LaserScan
+from shapely.geometry import LineString, Point
 # from geometry_msgs.msg import Twist
 # import tf
-import models
 
-# from robot-motion-planning import utils
+
+def pose_error():  # {{{1
+    pass
 
 def particle_filter(particles):  # {{{1
     # Input: particles
@@ -34,23 +36,19 @@ class RosEstimationNode(object):  # {{{1
     inputs: All inputs should be from from sensors? (camera, lidar..)
     outputs: Outputs should be an estimate of robot's pose (x, y, theta)
     """
-#    ParameterVector = namedtuple("DiffDriveRosPid",
-#                                 ["k_p",
-#                                  "k_i",
-#                                  "k_d"])
 
     def __init__(self, descr):  # {{{2
         # SET UP RATE FOR LOOP
         rate = rospy.Rate(10)  # TODO add to config
         # SET UP PUBLISHING
-        self.pub = rospy.Publisher(descr["publishtopics"]["name"],
-                                   descr["publishtopics"]["type"])
+        # self.pub = rospy.Publisher(descr["publishtopics"]["name"],
+        #                            descr["publishtopics"]["type"])
         # SET UP SUBSCRIBING
-        # rospy.Subscriber("base_scan", LaserScan, self.laserScanCallback)
-        for topic in descr["subscribetopics"]:
-            rospy.Subscriber(topic["name"],
-                             topic["type"],
-                             eval("self." + topic["callback"]))
+        rospy.Subscriber("base_scan", LaserScan, self.laserScanCallback)
+        # for topic in descr["subscribetopics"]:
+        #     rospy.Subscriber(topic["name"],
+        #                      topic["type"],
+        #                      eval("self." + topic["callback"]))
         # SET UP ALGORITHM FOR NODE
         descr["function"]
         while not rospy.is_shutdown():
@@ -63,9 +61,6 @@ class RosEstimationNode(object):  # {{{1
             rate.sleep()
 
     # Callback functions {{{2
-    def cameraCallback(self, data):  # {{{3
-        pass
-
     def laserScanCallback(self, data):  # {{{3
         angleMin = data.angle_min
         inc = data.angle_increment
@@ -78,10 +73,12 @@ class RosEstimationNode(object):  # {{{1
             rho = d
             x = rho * np.cos(phi)
             y = rho * np.sin(phi)
-            scan = models.Point2D()
-            scan.set_q((x, y))
-            self.laserscan.append(scan)
-        print("laserscan: ", self.laserscan[0])
+            p = Point(x, y)
+            self.laserscan.append(p)
+
+    def cameraCallback(self, data):  # {{{3
+        pass
+
 
     # Publish functions {{{2
     def publishPose(self, pub, data):  # {{{3
